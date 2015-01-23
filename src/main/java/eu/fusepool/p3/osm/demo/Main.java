@@ -10,7 +10,6 @@ public class Main {
         WebAppContext webapp = new WebAppContext();
         webapp.setContextPath("/demo/");
         webapp.setResourceBase("src/main/webapp");
-        //webapp.setWelcomeFiles(new String [] {"index.html"});
         server.setHandler(webapp);
         server.start();
         server.join();
