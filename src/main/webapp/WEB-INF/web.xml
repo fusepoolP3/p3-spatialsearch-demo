@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+
+<web-app xmlns="http://java.sun.com/xml/ns/javaee"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
+    metadata-complete="false"
+    version="3.0">
+
+    <display-name>FusepoolP3 OSM Geocode Demo</display-name>
+    <description>
+        This is a demo web application for a geocoding service based on OpenStreerMap data
+        
+    </description>
+
+    <servlet>
+        <servlet-name>Geocode</servlet-name>
+        <servlet-class>eu.fusepool.p3.osm.demo.GeocodeServlet</servlet-class>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>Geocode</servlet-name>
+        <url-pattern>/geocode</url-pattern>
+    </servlet-mapping>
+
+	<welcome-file-list>
+		<welcome-file>index.html</welcome-file>
+	</welcome-file-list>
+</web-app>    
