@@ -4,7 +4,7 @@
     <groupId>eu.fusepool.p3</groupId>
     <version>0.0.1-SNAPSHOT</version>
     <name>FusepoolP3 Spatial Search Demo</name>
-    <artifactId>p3-osm-demo</artifactId>
+    <artifactId>p3-spatialsearch-demo</artifactId>
     <packaging>jar</packaging>
 
     <properties>
@@ -12,7 +12,7 @@
         <jetty.version>9.2.0.RC0</jetty.version>
         <maven.compiler.source>1.7</maven.compiler.source>
         <maven.compiler.target>1.7</maven.compiler.target>
-        <main.class>eu.fusepool.p3.osm.demo.Main</main.class>
+        <main.class>eu.fusepool.p3.spatial.demo.Main</main.class>
         <finalName>${project.artifactId}-${project.version}</finalName>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
@@ -120,8 +120,7 @@
                 <configuration>
                     <mainClass>${main.class}</mainClass>
                     <arguments>
-                        <argument>-P</argument>
-                        <argument>7100</argument>
+                        <argument>http://sandbox.fusepool.info:8181/ldp/wr-ldpc/Trentino-Events-1/eventi-xml-xml-transformed</argument>
                     </arguments>
                 </configuration>
             </plugin>
