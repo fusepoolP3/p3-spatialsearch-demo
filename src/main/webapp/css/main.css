@@ -51,6 +51,11 @@ body {
 	background: white;
 }
 
+#map {
+	width: 900px; 
+	height: 400px	
+}
+
 #mainColumn h1 {
 	padding: 10px;
 	text-align: center;

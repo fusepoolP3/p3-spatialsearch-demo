@@ -6,20 +6,20 @@
     metadata-complete="false"
     version="3.0">
 
-    <display-name>FusepoolP3 OSM Geocode Demo</display-name>
+    <display-name>FusepoolP3 Spatial Search Demo</display-name>
     <description>
-        This is a demo web application for a geocoding service based on OpenStreerMap data
+        This is a demo web application for searching points of interest and events around a given position
         
     </description>
 
     <servlet>
-        <servlet-name>Geocode</servlet-name>
-        <servlet-class>eu.fusepool.p3.osm.demo.GeocodeServlet</servlet-class>
+        <servlet-name>SpatialSearch</servlet-name>
+        <servlet-class>eu.fusepool.p3.spatial.demo.SpatialSearchServlet</servlet-class>
     </servlet>
 
     <servlet-mapping>
-        <servlet-name>Geocode</servlet-name>
-        <url-pattern>/geocode</url-pattern>
+        <servlet-name>SpatialSearch</servlet-name>
+        <url-pattern>/search</url-pattern>
     </servlet-mapping>
 
 	<welcome-file-list>
