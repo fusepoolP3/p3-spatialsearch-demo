@@ -140,25 +140,31 @@ public class SpatialDataEnhancer {
      * @throws ParseException 
      * @throws Exception 
      */
-    public JSONObject enhanceJson(String dataSetUrl, TripleCollection dataToEnhance) throws JSONException {
+    public JSONObject enhanceJson(List<String> dataSetUrlList, TripleCollection dataToEnhance) throws JSONException {
         JSONObject resultJson = new JSONObject();
         if( dataToEnhance != null ){
             if( ! dataToEnhance.isEmpty() ) {
                 
                 //look for the knowledge base name in the triple store before fetching the data from the url.
-                if( ! isCachedGraph(spatialDataset, dataSetUrl) ){
-                  loadKnowledgeBase(spatialDataset, dataSetUrl, dataSetUrl);
-                }
-                else {
-                    log.info("Rdf data set " + dataSetUrl + " already in the triple store.");
-                }
-                WGS84Point point = getPoint(dataToEnhance);
-                double radius = getCircle(dataToEnhance).radius;
-                if(point.getStartDate() != null || point.getEndDate() != null){ 
-                    resultJson = queryEventsNearbyJson(point, dataSetUrl, radius);
-                }
-                else {
-                    resultJson = queryNearbyJson(point, dataSetUrl, radius);
+                if (dataSetUrlList != null) {
+                    Iterator<String> dataSetIter = dataSetUrlList.iterator();
+                    while (dataSetIter.hasNext()) {
+                        String dataSetUrl = dataSetIter.next();
+                        if( ! isCachedGraph(spatialDataset, dataSetUrl) ){
+                          loadKnowledgeBase(spatialDataset, dataSetUrl, dataSetUrl);
+                        }
+                        else {
+                            log.info("Rdf data set " + dataSetUrl + " already in the triple store.");
+                        }
+                        WGS84Point point = getPoint(dataToEnhance);
+                        double radius = getCircle(dataToEnhance).radius;
+                        if(point.getStartDate() != null || point.getEndDate() != null){ 
+                            resultJson = queryEventsNearbyJson(point, dataSetUrl, radius);
+                        }
+                        else {
+                            resultJson = queryNearbyJson(point, dataSetUrl, radius);
+                        }
+                    }
                 }
             }
             else {
@@ -378,7 +384,7 @@ public class SpatialDataEnhancer {
                 "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>");
         
         String qs = StrUtils.strjoinNL("SELECT * ",
-                "FROM NAMED <" + graphName + ">",
+                //"FROM NAMED <" + graphName + ">",
                 "WHERE { ",
                 "GRAPH <" + graphName + "> ",
                 " { ?location spatial:nearby (" + point.getLat() + " " + point.getLong() + " " + radius + " 'm') .",

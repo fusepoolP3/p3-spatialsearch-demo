@@ -119,9 +119,9 @@
                 <version>1.3</version>
                 <configuration>
                     <mainClass>${main.class}</mainClass>
-                    <arguments>
+                    <!-- arguments>
                         <argument>http://sandbox.fusepool.info:8181/ldp/wr-ldpc/Trentino-Events-1/eventi-xml-xml-transformed</argument>
-                    </arguments>
+                    </arguments-->
                 </configuration>
             </plugin>
         </plugins>

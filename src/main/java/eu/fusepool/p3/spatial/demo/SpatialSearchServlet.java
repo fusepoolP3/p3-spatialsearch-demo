@@ -1,13 +1,20 @@
 package eu.fusepool.p3.spatial.demo;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.clerezza.rdf.core.Resource;
 import org.apache.clerezza.rdf.core.Triple;
 import org.apache.clerezza.rdf.core.TripleCollection;
 import org.apache.clerezza.rdf.core.UriRef;
@@ -15,6 +22,8 @@ import org.apache.clerezza.rdf.core.impl.PlainLiteralImpl;
 import org.apache.clerezza.rdf.core.impl.SimpleMGraph;
 import org.apache.clerezza.rdf.core.impl.TripleImpl;
 import org.apache.clerezza.rdf.core.impl.TypedLiteralImpl;
+import org.apache.clerezza.rdf.core.serializedform.Parser;
+import org.apache.clerezza.rdf.core.serializedform.SupportedFormat;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -31,21 +40,26 @@ public class SpatialSearchServlet extends HttpServlet{
     private static final UriRef schema_circle = new UriRef("http://schema.org/circle");
     private static final UriRef schema_containedIn = new UriRef("http://schema.org/containedIn");
     private static final UriRef schema_geo = new UriRef("http://schema.org/geo");
+    private static final UriRef ldp_rdfsource = new UriRef("http://www.w3.org/ns/ldp#RDFSource");
+    private static final UriRef ldp_contains = new UriRef("http://www.w3.org/ns/ldp#contains");
+    private static final UriRef rdf_type = new UriRef("http://www.w3.org/1999/02/22-rdf-syntax-ns#type");
+    
     
     String graph = null;
     SpatialDataEnhancer enhancer = null;
     
     public void init() throws ServletException {
+        /*
         if (getServletContext().getAttribute("graph") != null) {
             graph = getServletContext().getAttribute("graph").toString();            
         }
         else {
             throw new ServletException("The data graph must be provided at the start of the application");
         }
-        
+        */
         try {
             enhancer = new SpatialDataEnhancer();
-            enhancer.loadKnowledgeBase(enhancer.getDataset(), graph, graph);
+            //enhancer.loadKnowledgeBase(enhancer.getDataset(), graph, graph);
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -54,19 +68,20 @@ public class SpatialSearchServlet extends HttpServlet{
     }
     
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        String container = request.getParameter("container");
         String coordinates = request.getParameter("coordinates");
         double radius = Double.parseDouble(request.getParameter("radius"));
         String date = request.getParameter("date");
         
-        System.out.println("Coordinates: " + coordinates + ", radius (m): " + radius + ", date: " + date);
+        System.out.println("Container: " + container + ", coordinates: " + coordinates + ", radius (m): " + radius + ", date: " + date);
         
         
-        WGS84Point position = getPosition(getCoordinates(coordinates), date);
+        //WGS84Point position = getPosition(getCoordinates(coordinates), date);
         TripleCollection rdfQuery = getRdfQuery(getCoordinates(coordinates), radius, date);
         
         JSONObject pois = null;
         try {
-            pois = enhancer.enhanceJson(graph, rdfQuery);
+            pois = enhancer.enhanceJson(getGraphs(container), rdfQuery);
         } catch (JSONException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -133,5 +148,28 @@ public class SpatialSearchServlet extends HttpServlet{
         String [] coordsStr =  latlong.substring(7, latlong.length() - 1).split(",");
         double [] coordinates = {Double.parseDouble(coordsStr[0]), Double.parseDouble(coordsStr[1])};
         return coordinates;
+    }
+    
+    private List<String> getGraphs(String container) throws MalformedURLException, IOException {
+        ArrayList<String> containerChild = new ArrayList<String>();
+        String [] graphs = null;
+        URLConnection connection = new URL(container).openConnection();
+        connection.addRequestProperty("Accept", "text/turtle");
+        String contentType = connection.getContentType();
+        InputStream is = connection.getInputStream();
+        Parser parser = Parser.getInstance();
+        TripleCollection containerGraph = parser.parse(is, SupportedFormat.TURTLE);
+        // is it a LDP container ?
+        Iterator<Triple> childIter = containerGraph.filter(null, ldp_contains, null);
+        while (childIter.hasNext()) {
+            UriRef childRef = (UriRef) childIter.next().getObject();
+            containerChild.add(childRef.getUnicodeString());
+        }
+        
+        // is it a RDF graph ?
+        if (containerChild.size() == 0 ) {
+            containerChild.add(container);
+        }
+        return containerChild;
     }
 }

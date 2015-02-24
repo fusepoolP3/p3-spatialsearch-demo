@@ -12,8 +12,8 @@
 <div id="wrapper">
 <div id="mainColumn">
 <h1>FusepoolP3 Spatial Search Demo</h1>
-<p>Search events or point of interest. Move the marker to select a position, chose a radius and optionally a start date for events.</p>
-
+<p>Search events or point of interest. Move the marker to select a position, choose a radius and optionally a start date for events.</p>
+LDP Container: <input id="container" type="text" size="20"/><br>
 Coordinates:
 <input id="coordinates" type="text" />
 Radius (m):
@@ -84,10 +84,11 @@ Date:
 	}
 	
 	function getJson(){		
+		var container = document.getElementById('container').value;
 		var coords = document.getElementById('coordinates').value;
 		var date = document.getElementById('date').value;
 		var radius = document.getElementById('radius').value;
-		$.getJSON("./search?coordinates="+coords+"&date="+date+"&radius="+radius,function(data){
+		$.getJSON("./search?coordinates="+coords+"&date="+date+"&radius="+radius+"&container="+container,function(data){
 			geojsonLayer = L.geoJson(data,{
 				onEachFeature: function (feature, layer) {
 			        layer.bindPopup(feature.properties.name  + "<br>" +
@@ -99,21 +100,7 @@ Date:
 		});
 	}
 	
-	function getData(){
-		var coords = document.getElementById('coordinates').value;
-		var eventsLayer = new L.geoJson();
-		eventsLayer.addTo(map);
-		$.ajax({
-		  dataType: "json",
-		  url: "./geocode?streetname="+coords,
-		  success: function(data){
-			$(data.features).each(function(key,data){
-				eventsLayer.addData(data);
-			});
-		  }
-		}).error(function(){});
-		 
-	}
+	
 	
 	function removeMarkers() {
 		map.removeLayer(geojsonLayer);
