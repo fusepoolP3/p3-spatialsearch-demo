@@ -81,7 +81,7 @@ public class SpatialSearchServlet extends HttpServlet{
         
         JSONObject pois = null;
         try {
-            pois = enhancer.enhanceJson(getGraphs(container), rdfQuery);
+            pois = enhancer.enhanceJson(getRdfSources(container), rdfQuery);
         } catch (JSONException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -149,13 +149,18 @@ public class SpatialSearchServlet extends HttpServlet{
         double [] coordinates = {Double.parseDouble(coordsStr[0]), Double.parseDouble(coordsStr[1])};
         return coordinates;
     }
-    
-    private List<String> getGraphs(String container) throws MalformedURLException, IOException {
+    /**
+     * Retrieves the child of a container that are ldp:RDFSource. A container can contain ldp:RDFSource
+     * or being a ldp:RDFSource itself.
+     * @param container
+     * @return
+     * @throws MalformedURLException
+     * @throws IOException
+     */
+    private List<String> getRdfSources(String container) throws MalformedURLException, IOException {
         ArrayList<String> containerChild = new ArrayList<String>();
-        String [] graphs = null;
         URLConnection connection = new URL(container).openConnection();
         connection.addRequestProperty("Accept", "text/turtle");
-        String contentType = connection.getContentType();
         InputStream is = connection.getInputStream();
         Parser parser = Parser.getInstance();
         TripleCollection containerGraph = parser.parse(is, SupportedFormat.TURTLE);
@@ -163,10 +168,18 @@ public class SpatialSearchServlet extends HttpServlet{
         Iterator<Triple> childIter = containerGraph.filter(null, ldp_contains, null);
         while (childIter.hasNext()) {
             UriRef childRef = (UriRef) childIter.next().getObject();
-            containerChild.add(childRef.getUnicodeString());
+            URLConnection conn = new URL(childRef.getUnicodeString()).openConnection();
+            conn.addRequestProperty("Accept", "text/turtle");
+            InputStream isChild = conn.getInputStream();
+            TripleCollection childRdf = parser.parse(isChild, SupportedFormat.TURTLE);
+            Iterator<Triple> rdfSourceIter = childRdf.filter(null, rdf_type, ldp_rdfsource);
+            while (rdfSourceIter.hasNext()) {
+                UriRef rdfSourceRef = (UriRef) rdfSourceIter.next().getSubject();
+                containerChild.add(rdfSourceRef.getUnicodeString());
+            }
         }
         
-        // is it a RDF graph ?
+        // or is it a RDF graph ?
         if (containerChild.size() == 0 ) {
             containerChild.add(container);
         }

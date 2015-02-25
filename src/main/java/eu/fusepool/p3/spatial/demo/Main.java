@@ -12,7 +12,8 @@ public class Main {
          graph = args[0];
         }
         */
-        Server server = new Server(Integer.valueOf(8080));
+        Server server = new Server(Integer.valueOf(7301));
+        System.out.println("Running on port 7301");
         WebAppContext webapp = new WebAppContext();
         webapp.setContextPath("/");
         //webapp.setAttribute("graph", graph);

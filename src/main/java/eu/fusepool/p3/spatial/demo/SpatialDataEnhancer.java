@@ -303,15 +303,15 @@ public class SpatialDataEnhancer {
                 "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>");
         
         String qs = StrUtils.strjoinNL("SELECT * ",
-               // "FROM NAMED <" + graphName + ">",
+                getFromNamedClauses(),
                 "WHERE { ",
-                "GRAPH <" + graphName + "> ",
+                "GRAPH ?g ",
                 " { ?s spatial:nearby (" + point.getLat() + " " + point.getLong() + " " + radius + " 'm') ;",
                 "      rdf:type ?type ; ",
                 "      geo:lat ?lat ;" ,
-                "      geo:long ?lon ; ",
-                
-                "      rdfs:label ?label .", " }",
+                "      geo:long ?lon ; ",                
+                "      rdfs:label ?label .", 
+                "  } ",
                 "}");
 
         System.out.println(pre + "\n" + qs);
@@ -364,6 +364,21 @@ public class SpatialDataEnhancer {
 
     }
     
+    private String getFromNamedClauses() {
+        String fromNamedClauses = "";
+        spatialDataset.begin(ReadWrite.READ);
+        try {
+            Iterator<String> inames = getDataset().listNames();
+            while(inames.hasNext()){
+                fromNamedClauses += "FROM NAMED <" + inames.next() + "> \n";
+            }
+        }
+        finally {
+            spatialDataset.end();
+        }
+        return fromNamedClauses;
+    }
+    
     /**
      * Searches for events within a circle of a given radius, starting from a date or within a time frame. 
      * The data used is stored in a named graph.
@@ -384,9 +399,9 @@ public class SpatialDataEnhancer {
                 "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>");
         
         String qs = StrUtils.strjoinNL("SELECT * ",
-                //"FROM NAMED <" + graphName + ">",
+                getFromNamedClauses(),
                 "WHERE { ",
-                "GRAPH <" + graphName + "> ",
+                "GRAPH ?g ",
                 " { ?location spatial:nearby (" + point.getLat() + " " + point.getLong() + " " + radius + " 'm') .",
                 "   ?location geo:lat ?lat ." ,
                 "   ?location geo:long ?lon . ",
@@ -396,7 +411,7 @@ public class SpatialDataEnhancer {
                 "   ?event rdfs:label ?eventLabel .",
                 "   ?event schema:startDate ?start .",
                 "   FILTER(?start >= \"" + point.getStartDate() + "\"^^xsd:date ) ",
-                " }",
+                " } ",
                 "}");
 
         log.info(pre + "\n" + qs);
