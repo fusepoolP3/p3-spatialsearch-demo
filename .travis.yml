@@ -3,7 +3,7 @@ deploy:
   provider: releases
   api_key:
     secure: WZKOSo3Zb3LO2R6gddhKL4YUFzKYSNv64OePXVBEkVU4b8Tic19gi0gcOCzUo0EORw9BVNzY69TkQKg4jSQJjEZ4AplrSJnzlwJ0LZwEjXKwJdkacbac7TRTIHNSLA+gqC86NhB5NJzWlEHEplYH8iB+QXoTLLpi8sqRY5JnGOo=
-  file: target/p3-spatialsearch-demo-$TRAVIS_TAG
+  file: target/p3-spatialsearch-demo-$TRAVIS_TAG-jar-with-dependencies.jar
   on:
     repo: fusepoolP3/p3-spatialsearch-demo
     tags: true
