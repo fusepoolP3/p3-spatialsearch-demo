@@ -303,7 +303,7 @@ public class SpatialDataEnhancer {
                 "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>");
         
         String qs = StrUtils.strjoinNL("SELECT * ",
-                "FROM NAMED <" + graphName + ">",
+               // "FROM NAMED <" + graphName + ">",
                 "WHERE { ",
                 "GRAPH <" + graphName + "> ",
                 " { ?s spatial:nearby (" + point.getLat() + " " + point.getLong() + " " + radius + " 'm') ;",
@@ -426,6 +426,7 @@ public class SpatialDataEnhancer {
                 pointObject.put("coordinates", coord);
                 JSONObject properties = new JSONObject();
                 properties.put("name", eventLabel);
+                properties.put("start", startDate);
                 JSONObject feature = new JSONObject();
                 feature.put("type", "Feature");
                 feature.put("geometry", pointObject);
