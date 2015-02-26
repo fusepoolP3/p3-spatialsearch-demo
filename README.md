@@ -1,12 +1,14 @@
-# Build
+Fusepool P3 Spatial Search Demo
+============================
 
-Build the project with
+A web application that uses the data sets from Fusepool P3 LDP to search for points of interest or events.
 
-    $ mvn install
+[![Build Status](https://travis-ci.org/fusepoolP3/p3-spatialsearch-demo.svg?branch=master)](https://travis-ci.org/fusepoolP3/p3-spatialsearch-demo)
 
-# Run
+Compile the application running the command
 
-Now you can run your webapp with:
+    mvn install
 
-    $ java -jar artifactId.jar
+Start the application using the command
 
+    mvn exec:java
