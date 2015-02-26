@@ -54,20 +54,11 @@ import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ResourceFactory;
 import com.hp.hpl.jena.tdb.TDBFactory;
 /**
- * Enhances an input graph with information taken from a remote source. 
+ * Search for points of interest or events around a given location and within a time frame 
  * @author luigi
  *
  */
 public class SpatialDataEnhancer {
-    
-    private static final UriRef geo_long = new UriRef("http://www.w3.org/2003/01/geo/wgs84_pos#long");
-    private static final UriRef geo_lat = new UriRef("http://www.w3.org/2003/01/geo/wgs84_pos#lat");
-    private static final UriRef schema_event = new UriRef("http://schema.org/event");
-    private static final UriRef schema_location = new UriRef("http://schema.org/location");
-    private static final UriRef schema_startDate = new UriRef("http://schema.org/startDate");
-    private static final UriRef schema_endDate = new UriRef("http://schema.org/endDate");
-    private static final UriRef schema_circle = new UriRef("http://schema.org/circle");
-    private static final UriRef schema_containedIn = new UriRef("http://schema.org/containedIn");
     
     File LUCENE_INDEX_DIR = null;
     File TDB_DIR = null;
@@ -89,49 +80,6 @@ public class SpatialDataEnhancer {
         TDB_DIR = File.createTempFile("jenatdb-", "-dataset");
         //spatialDataset = initInMemoryDatasetWithLuceneSpatialIndex(LUCENE_INDEX_DIR);
         spatialDataset = initTDBDatasetWithLuceneSpatialIndex(LUCENE_INDEX_DIR, TDB_DIR);
-    }
-    
-    
-    /**
-     * Takes a RDF data set to search for point of interest close to objects provided in a graph.  
-     * @throws ParseException 
-     * @throws Exception 
-     */
-    public TripleCollection enhance(String dataSetUrl, TripleCollection dataToEnhance) {
-        TripleCollection result = new SimpleMGraph();
-        if( dataToEnhance != null ){
-        	if( ! dataToEnhance.isEmpty() ) {
-		        
-		        //look for the knowledge base name in the triple store before fetching the data from the url.
-		        if( ! isCachedGraph(spatialDataset, dataSetUrl) ){
-		          loadKnowledgeBase(spatialDataset, dataSetUrl, dataSetUrl);
-		        }
-		        else {
-		            log.info("Rdf data set " + dataSetUrl + " already in the triple store.");
-		        }
-		        WGS84Point point = getPoint(dataToEnhance);
-		        double radius = getCircle(dataToEnhance).radius;
-		        if(point.getStartDate() != null || point.getEndDate() != null){ 
-    		        TripleCollection poiGraph = queryEventsNearby(point, dataSetUrl, radius);
-    		        if(poiGraph.size() > 0){
-    		         result.addAll(poiGraph);
-    		        }
-		        }
-		        else {
-		            TripleCollection poiGraph = queryNearby(point, dataSetUrl, radius);
-                    if(poiGraph.size() > 0){
-                     result.addAll(poiGraph);
-                    }
-		        }
-        	}
-        	else {
-        		throw new IllegalArgumentException("An empty graph cannot be enhanced");
-        	}
-        }
-        else {
-        	throw new NullPointerException("A null object has been passed instead of a graph.");
-        }
-        return result;
     }
     
     /**
@@ -184,15 +132,15 @@ public class SpatialDataEnhancer {
      */
     public WGS84Point getPoint(TripleCollection graph) {
         WGS84Point point = new WGS84Point();   
-        NonLiteral pointRef = graph.filter(null, geo_lat, null).next().getSubject();
-        String latitude = ( (TypedLiteral) graph.filter(pointRef, geo_lat, null).next().getObject() ).getLexicalForm();
-        String longitude = ( (TypedLiteral) graph.filter(pointRef, geo_long, null).next().getObject() ).getLexicalForm();
+        NonLiteral pointRef = graph.filter(null, Vocabulary.geo_lat, null).next().getSubject();
+        String latitude = ( (TypedLiteral) graph.filter(pointRef, Vocabulary.geo_lat, null).next().getObject() ).getLexicalForm();
+        String longitude = ( (TypedLiteral) graph.filter(pointRef, Vocabulary.geo_long, null).next().getObject() ).getLexicalForm();
         point.setUri(pointRef.toString());
         point.setLat(Double.valueOf(latitude));
         point.setLong(Double.valueOf(longitude));
         // look for events linked to places
-        if(graph.filter(null, schema_startDate, null).hasNext()){                    
-            String startDate = ( (TypedLiteral) graph.filter(null, schema_startDate, null).next().getObject()).getLexicalForm();
+        if(graph.filter(null, Vocabulary.schema_startDate, null).hasNext()){                    
+            String startDate = ( (TypedLiteral) graph.filter(null, Vocabulary.schema_startDate, null).next().getObject()).getLexicalForm();
             point.setStartDate(startDate);
         }
         return point;
@@ -205,8 +153,8 @@ public class SpatialDataEnhancer {
      */
     public Circle getCircle(TripleCollection graph) {
         Circle circle = new Circle();
-        if (graph.filter(null, schema_circle, null).hasNext()) {
-            String circleTxt = ((PlainLiteralImpl) graph.filter(null, schema_circle, null).next().getObject()).getLexicalForm();
+        if (graph.filter(null, Vocabulary.schema_circle, null).hasNext()) {
+            String circleTxt = ((PlainLiteralImpl) graph.filter(null, Vocabulary.schema_circle, null).next().getObject()).getLexicalForm();
             String [] circleData = circleTxt.split(" ");
             circle.centerLat = Double.parseDouble(circleData[0]);
             circle.centerLong = Double.parseDouble(circleData[1]);
@@ -216,73 +164,7 @@ public class SpatialDataEnhancer {
         }
         return circle;
     }
-    /**
-     * Searches for points of interest within a circle of a given radius. 
-     * The data used is stored in a named graph.
-     * @param point
-     * @param uri
-     * @param radius
-     * @return
-     */
-    public TripleCollection queryNearby(WGS84Point point, String graphName, double radius){
-        TripleCollection resultGraph = new SimpleMGraph();
-        log.info("queryNearby()");
-        long startTime = System.nanoTime();
-        String pre = StrUtils.strjoinNL("PREFIX spatial: <http://jena.apache.org/spatial#>",
-                "PREFIX geo: <http://www.w3.org/2003/01/geo/wgs84_pos#>",
-                "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>",
-                "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>");
-        
-        String qs = StrUtils.strjoinNL("SELECT * ",
-                "FROM NAMED <" + graphName + ">",
-                "WHERE { ",
-                "GRAPH <" + graphName + "> ",
-                " { ?s spatial:nearby (" + point.getLat() + " " + point.getLong() + " " + radius + " 'm') ;",
-                "      rdf:type ?type ; ",
-                "      geo:lat ?lat ;" ,
-                "      geo:long ?lon ; ",
-                
-                "      rdfs:label ?label .", " }",
-                "}");
-
-        System.out.println(pre + "\n" + qs);
-        spatialDataset.begin(ReadWrite.READ);
-        int poiCounter = 0;
-        try {
-            Query q = QueryFactory.create(pre + "\n" + qs);
-            QueryExecution qexec = QueryExecutionFactory.create(q, spatialDataset);
-            ResultSet results = qexec.execSelect() ;
-            for ( ; results.hasNext() ; ) {
-                QuerySolution solution = results.nextSolution() ;
-                String poiUri = solution.getResource("s").getURI();
-                String poiName = checkUriName(poiUri);
-                String poiType = checkUriName(solution.getResource("type").getURI());
-                String poiLabel = solution.getLiteral("label").getString();
-                String poiLatitude = solution.getLiteral("lat").getString();
-                String poiLongitude = solution.getLiteral("lon").getString();
-                log.info("poi name: " + poiName + " label = " + poiLabel);
-                UriRef poiRef = new UriRef(poiName);
-                String positionUri = checkUriName(point.getUriName());
-                resultGraph.add( new TripleImpl(poiRef, schema_containedIn, new UriRef(positionUri)) );               
-                resultGraph.add( new TripleImpl(poiRef, RDFS.label, new PlainLiteralImpl(poiLabel)) );
-                resultGraph.add( new TripleImpl(poiRef, RDF.type, new UriRef(poiType)));
-                resultGraph.add( new TripleImpl(poiRef, geo_lat, new TypedLiteralImpl(poiLatitude, XSD.float_)) );
-                resultGraph.add( new TripleImpl(poiRef, geo_long, new TypedLiteralImpl(poiLongitude, XSD.float_)) );  
-                poiCounter++;
-                
-            }
-          
-        } 
-        finally {
-            spatialDataset.end();
-        }
-        long finishTime = System.nanoTime();
-        double time = (finishTime - startTime) / 1.0e6;
-        log.info(String.format("FINISH - %.2fms", time));
-        log.info(String.format("Found " + poiCounter + " points of interest."));
-        return resultGraph;
-
-    }
+    
     
     /**
      * Searches for points of interest within a circle of a given radius. 
@@ -468,86 +350,7 @@ public class SpatialDataEnhancer {
 
     }
     
-    /**
-     * Searches for events within a circle of a given radius, starting from a date or within a time frame. 
-     * The data used is stored in a named graph.
-     * @param point
-     * @param uri
-     * @param radius
-     * @return
-     */
-    public TripleCollection queryEventsNearby(WGS84Point point, String graphName, double radius){
-        TripleCollection resultGraph = new SimpleMGraph();
-        log.info("queryNearby()");
-        long startTime = System.nanoTime();
-        String pre = StrUtils.strjoinNL("PREFIX spatial: <http://jena.apache.org/spatial#>",
-                "PREFIX geo: <http://www.w3.org/2003/01/geo/wgs84_pos#>",
-                "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>",
-                "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>",
-                "PREFIX schema: <http://schema.org/>",
-                "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>");
-        
-        String qs = StrUtils.strjoinNL("SELECT * ",
-                "FROM NAMED <" + graphName + ">",
-                "WHERE { ",
-                "GRAPH <" + graphName + "> ",
-                " { ?location spatial:nearby (" + point.getLat() + " " + point.getLong() + " " + radius + " 'm') .",
-                "   ?location geo:lat ?lat ." ,
-                "   ?location geo:long ?lon . ",
-                "   ?location rdf:type ?type . ",
-                "   ?location rdfs:label ?label .",
-                "   ?event schema:location ?location .",
-                "   ?event rdfs:label ?eventLabel .",
-                "   ?event schema:startDate ?start .",
-                "   FILTER(?start >= \"" + point.getStartDate() + "\"^^xsd:date ) ",
-                " }",
-                "}");
-
-        log.info(pre + "\n" + qs);
-        spatialDataset.begin(ReadWrite.READ);
-        int poiCounter = 0;
-        try {
-            Query q = QueryFactory.create(pre + "\n" + qs);
-            QueryExecution qexec = QueryExecutionFactory.create(q, spatialDataset);
-            ResultSet results = qexec.execSelect() ;
-            for ( ; results.hasNext() ; ) {
-                QuerySolution solution = results.nextSolution() ;
-                String poiUri = solution.getResource("location").getURI();
-                String poiName = checkUriName(poiUri);
-                String poiLabel = solution.getLiteral("label").getString();
-                String poiLatitude = solution.getLiteral("lat").getString();
-                String poiLongitude = solution.getLiteral("lon").getString();
-                log.info("poi name: " + poiName + " label = " + poiLabel);
-                UriRef poiRef = new UriRef(poiName);                
-                String positionUri = checkUriName(point.getUriName());
-                resultGraph.add( new TripleImpl(poiRef, schema_containedIn, new UriRef(positionUri)) );               
-                resultGraph.add( new TripleImpl(poiRef, RDFS.label, new PlainLiteralImpl(poiLabel)) );
-                resultGraph.add( new TripleImpl(poiRef, geo_lat, new TypedLiteralImpl(poiLatitude, XSD.float_)) );
-                resultGraph.add( new TripleImpl(poiRef, geo_long, new TypedLiteralImpl(poiLongitude, XSD.float_)) );           
-                String eventUri = solution.getResource("event").getURI();
-                String eventLabel = solution.getLiteral("eventLabel").getString();
-                String startDate = solution.getLiteral("start").getString();
-                UriRef eventRef = new UriRef(eventUri);
-                resultGraph.add(new TripleImpl(eventRef, RDFS.label, new PlainLiteralImpl(eventLabel)) );
-                resultGraph.add(new TripleImpl(eventRef,schema_location, poiRef));
-                resultGraph.add(new TripleImpl(poiRef,schema_event, eventRef));
-                resultGraph.add(new TripleImpl(eventRef,schema_startDate,new TypedLiteralImpl(startDate, XSD.double_)));
-                poiCounter++;
-                
-            }
-          
-        } 
-        finally {
-            spatialDataset.end();
-        }
-        long finishTime = System.nanoTime();
-        double time = (finishTime - startTime) / 1.0e6;
-        log.info(String.format("FINISH - %.2fms", time));
-        log.info(String.format("Found " + poiCounter + " points of interest."));
-        return resultGraph;
-
-    }
-    /**
+     /**
      * Extracts the name from the URI (removes '<' and '>' )
      * @param uri
      * @return
