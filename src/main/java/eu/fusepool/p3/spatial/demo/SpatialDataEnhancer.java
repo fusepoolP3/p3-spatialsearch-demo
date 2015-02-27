@@ -292,6 +292,7 @@ public class SpatialDataEnhancer {
                 "   ?event schema:location ?location .",
                 "   ?event rdfs:label ?eventLabel .",
                 "   ?event schema:startDate ?start .",
+                "   ?event schema:endDate ?end .",
                 "   FILTER(?start >= \"" + point.getStartDate() + "\"^^xsd:date ) ",
                 " } ",
                 "}");
@@ -316,6 +317,7 @@ public class SpatialDataEnhancer {
                 String eventUri = solution.getResource("event").getURI();
                 String eventLabel = solution.getLiteral("eventLabel").getString();
                 String startDate = solution.getLiteral("start").getString();
+                String endDate = solution.getLiteral("end").getString();
                 log.info("poi name: " + poiName + " label = " + poiLabel);
                 UriRef poiRef = new UriRef(poiName);                
                 String positionUri = checkUriName(point.getUriName());
@@ -324,6 +326,7 @@ public class SpatialDataEnhancer {
                 JSONObject properties = new JSONObject();
                 properties.put("name", eventLabel);
                 properties.put("start", startDate);
+                properties.put("end", endDate);                
                 JSONObject feature = new JSONObject();
                 feature.put("type", "Feature");
                 feature.put("geometry", pointObject);
