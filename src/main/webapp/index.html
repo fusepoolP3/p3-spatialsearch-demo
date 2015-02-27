@@ -2,109 +2,110 @@
 <head>
 	<title>FusepoolP3 Spatial Search Demo</title>
 	<meta charset="utf-8" />
-
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="js/leaflet/leaflet.css" />
-    <link rel="stylesheet" href="css/main.css" />
-	
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="stylesheet" href="js/leaflet/leaflet.css" />    
+    <link rel="stylesheet" href="css/mobile.css" />
+	<script src="js/leaflet/leaflet.js"></script>
+	<script src="js/leaflet/Leaflet.MakiMarkers.js"></script> />
+    <script src="js/jquery/jquery-2.1.3.min.js"></script>
 </head>
 <body>
-<div id="wrapper">
-<div id="mainColumn">
-<h1>FusepoolP3 Spatial Search Demo</h1>
-<p>Search events or point of interest. Move the marker to select a position, choose a radius and optionally a start date for events.</p>
-LDP Container: <input id="container" type="text" size="20"/><br>
-Coordinates:
-<input id="coordinates" type="text" />
-Radius (m):
-<input id="radius" type="text" value="1000" size="4"/>
-Date:
-<input id="date" type="text" value="2015-02-25" size="10"/>
-<button type="button" onclick="getJson()">Show more</button>
-<button type="button" onclick="removeMarkers()">Clean</button>
+  <div id="wrapper">
+    <div id="mainColumn">
+       <h1>FusepoolP3 Spatial Search Demo</h1>
+       <p>Search events or point of interest. Move the marker to select a position, choose a radius and optionally a start date for events.</p>
+       LDP Container: <input id="container" type="text" size="20"/><br>
+       Coordinates:
+       <input id="coordinates" type="text" />
+       Radius (m):
+       <input id="radius" type="text" value="1000" size="4"/>
+       Date:
+       <input id="date" type="text" value="2015-02-25" size="10"/>
+       <button type="button" onclick="getJson()">Show more</button>
+       <button type="button" onclick="removeMarkers()">Clean</button>
+       <p id="text"></p>
+       <div id="map"></div>
+	
+	   <script type="text/javascript">
+	
+	     var map = L.map('map').setView([46.071590, 11.123274], 6);
+	     var coordinates = document.getElementById('coordinates').value;
+	
+	     var geojsonLayer;
+	     var myMarkerLong = 11.123274;
+	     var myMarkerLat = 46.071590;
+	     var markerCircle;
 
- 
-<p id="text"></p>
-<div id="map"></div>
-	<script src="js/leaflet/leaflet.js"></script>
-    <script src="js/jquery/jquery-2.1.3.min.js"></script>
-	<script type="text/javascript">
-	
-	var map = L.map('map').setView([44.498751, 11.340269], 6);
-	var coordinates = document.getElementById('coordinates').value;
-	
-	var geojsonLayer;
-	
-	
-	L.tileLayer('https://{s}.tiles.mapbox.com/v3/{id}/{z}/{x}/{y}.png', {
-		maxZoom: 18,
-		attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' +
-			'<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
-			'Imagery © <a href="http://mapbox.com">Mapbox</a>',
-		id: 'examples.map-i875mjb7'
-	}).addTo(map);
+	     L.tileLayer('https://{s}.tiles.mapbox.com/v3/{id}/{z}/{x}/{y}.png', {
+		      maxZoom: 18,
+		      attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' +
+			               '<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
+			               'Imagery © <a href="http://mapbox.com">Mapbox</a>',
+		      id: 'examples.map-i875mjb7'
+	     }).addTo(map);
 		
-	var popup = L.popup();
-	
-	marker = L.marker([46.071326, 11.1090217], {
-		draggable: true	
-	}).addTo(map);
-	
-	
-	marker.on('dragend',function(e) {
-		var marker = e.target;
-		var result = marker.getLatLng();
-		document.getElementById('coordinates').value = result;
-	});
-	
-	function onDragging(e) {
-		document.getElementById('coordinates').value = e.latlng.toString();
-	}
-	
-	/*
-	function onMapClick(e) {
-		document.getElementById('coordinates').value = e.latlng.toString();
-		popup
-			.setLatLng(e.latlng)
-			.setContent(
-					    "<p>You clicked the map at " + e.latlng.toString() + "</p>" 			            
-			            )
-			.openOn(map);
-	}
-	*/
-
-	map.on('click', onMapClick);
-	//map.on('click', getJson);
-	
-	function copyLocation(loc) {
-		document.getElementById("coordinates").value = loc;
-	}
-	function show_name(){
-		document.getElementById('text').innerHTML=document.getElementById('coordinates').value;
-	}
-	
-	function getJson(){		
-		var container = document.getElementById('container').value;
-		var coords = document.getElementById('coordinates').value;
-		var date = document.getElementById('date').value;
-		var radius = document.getElementById('radius').value;
-		$.getJSON("./search?coordinates="+coords+"&date="+date+"&radius="+radius+"&container="+container,function(data){
+	     var eventIcon = L.MakiMarkers.icon({icon: "marker", color: "#ff0", size: "1"});
+	     var myIcon = L.MakiMarkers.icon({icon: "embassy", color: "#f00", size: "1"});
+	     var myMarker = L.marker([46.071590, 11.123274], {
+	    	 icon: myIcon,
+		     draggable: true	
+	     }).addTo(map);
+	     
+	     myMarker.on('dragend', function(e) {
+		     var marker = e.target;
+		     var result = marker.getLatLng();
+		     document.getElementById('coordinates').value = result;
+		     myMarkerLat = marker.getLatLng().lat;
+			 myMarkerLong = marker.getLatLng().lng;
+	     });
+	     
+	    
+		/*
+		function onMapClick(e) {
+			document.getElementById('coordinates').value = e.latlng.toString();
+			popup
+				.setLatLng(e.latlng)
+				.setContent(
+						    "<p>You clicked the map at " + e.latlng.toString() + "</p>" 			            
+				            )
+				.openOn(map);
+		}
+		*/
+	    //map.on('click', onMapClick);
+		
+		var myLayerGroup = L.layerGroup().addTo(map);
+	    
+	    function getJson(){		
+		  var container = document.getElementById('container').value;
+		  var coords = document.getElementById('coordinates').value;
+		  var date = document.getElementById('date').value;
+		  var radius = document.getElementById('radius').value;
+		  $.getJSON("./search?coordinates="+coords+"&date="+date+"&radius="+radius+"&container="+container,function(data){
 			geojsonLayer = L.geoJson(data,{
+				//change icon to features
+				pointToLayer: function (feature,latlng) {					
+					return L.marker(latlng,{icon: eventIcon});
+				},
+				// add popup to feature
 				onEachFeature: function (feature, layer) {
-			        layer.bindPopup(feature.properties.name  + "<br>" +
-			        		"Start date: " + feature.properties.start );
-			        
-			      }
+			        layer.bindPopup("Title: " + feature.properties.name  + "<br>" +
+			        		"Start date: " + feature.properties.start  + "<br>" +
+			        		"End date: " + feature.properties.end );				   
+			    }
 			});
-			geojsonLayer.addTo(map);
-		});
-	}
+			myLayerGroup.addLayer(geojsonLayer);
+		  });
+		  circle = L.circle([myMarkerLat, myMarkerLong],radius,{color: "red"});
+		  myLayerGroup.addLayer(circle)
+	    }
 	
-	
-	
-	function removeMarkers() {
-		map.removeLayer(geojsonLayer);
-	}
+	   function removeMarkers() {
+		   myLayerGroup.eachLayer(function (layer) {
+			   myLayerGroup.removeLayer(layer);
+		   });
+		   
+	   }
+	   
 		
 	</script>
 	
