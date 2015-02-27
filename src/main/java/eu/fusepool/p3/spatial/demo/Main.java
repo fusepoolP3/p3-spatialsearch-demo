@@ -6,14 +6,14 @@ import org.eclipse.jetty.webapp.WebAppContext;
 public class Main {
         
     public static void main(String[] args) throws Exception {
-        /*
-        String graph = null;
+        
+        int port = 7100;
         if (args != null) {
-         graph = args[0];
+         port = Integer.parseInt(args[0]);
         }
-        */
-        Server server = new Server(Integer.valueOf(7301));
-        System.out.println("Running on port 7301");
+        
+        Server server = new Server(port);
+        System.out.println("Running on port " + port);
         WebAppContext webapp = new WebAppContext();
         webapp.setContextPath("/");
         //webapp.setAttribute("graph", graph);
