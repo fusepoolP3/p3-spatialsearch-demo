@@ -44,7 +44,7 @@
 		      id: 'examples.map-i875mjb7'
 	     }).addTo(map);
 		
-	     var eventIcon = L.MakiMarkers.icon({icon: "marker", color: "#ff0", size: "1"});
+	     
 	     var myIcon = L.MakiMarkers.icon({icon: "embassy", color: "#f00", size: "1"});
 	     var myMarker = L.marker([46.071590, 11.123274], {
 	    	 icon: myIcon,
@@ -73,18 +73,25 @@
 		*/
 	    //map.on('click', onMapClick);
 		
+		var eventIcon = L.MakiMarkers.icon({icon: "marker", color: "#ff0", size: "1"});
+	    var poiIcon = L.MakiMarkers.icon({icon: "marker", color: "#339933", size: "1"});
+	     
 		var myLayerGroup = L.layerGroup().addTo(map);
 	    
 	    function getJson(){		
 		  var container = document.getElementById('container').value;
 		  var coords = document.getElementById('coordinates').value;
 		  var date = document.getElementById('date').value;
+		  var markerIcon = poiIcon;
+		  if(date !=''){
+			  markerIcon = eventIcon; 
+		  }
 		  var radius = document.getElementById('radius').value;
 		  $.getJSON("./search?coordinates="+coords+"&date="+date+"&radius="+radius+"&container="+container,function(data){
 			geojsonLayer = L.geoJson(data,{
 				//change icon to features
 				pointToLayer: function (feature,latlng) {					
-					return L.marker(latlng,{icon: eventIcon});
+					return L.marker(latlng,{icon: markerIcon});
 				},
 				// add popup to feature
 				onEachFeature: function (feature, layer) {
