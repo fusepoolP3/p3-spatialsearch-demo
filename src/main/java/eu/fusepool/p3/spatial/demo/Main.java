@@ -13,17 +13,14 @@ public class Main {
         
         int port = 7302;
         /*
-        if (args == null) {
+        if (args != null) {
          port = Integer.parseInt(args[0]);
         }
         */
-        String webappDir = "src/main/webapp";
-        ProtectionDomain domain = Main.class.getProtectionDomain();
-        URL location = domain.getCodeSource().getLocation();
+        String webappDir = "src/main/webapp";        
         Server server = new Server(port);
         System.out.println("Running on port " + port);
-        WebAppContext context = new WebAppContext();
-        context.setWar(location.toExternalForm());
+        WebAppContext context = new WebAppContext();        
         context.setDescriptor(webappDir + "WEB-INF/web.xml");
         context.setContextPath("/");
         context.setResourceBase(webappDir);

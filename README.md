@@ -12,3 +12,14 @@ Compile the application running the command
 Start the application using the command
 
     mvn exec:java
+
+The webapp can be start using the release (executable jar)
+
+    java -jar p3-spatialsearch-demo-<version>-standalone.jar
+
+The default port is 8080. To change the port use the httpPort option, for example to use the port 7320 run the command
+
+    java -jar p3-spatialsearch-demo-<version>-standalone.jar --httpPort=7320
+
+
+The application consumes RDF data and shows object and event described by the schema.org ontology.
