@@ -9,7 +9,7 @@
 
     <properties>
         <java.version>1.7</java.version>
-        <jetty.version>9.2.0.RC0</jetty.version>
+        <jetty.version>10.0.10</jetty.version>
         <maven.compiler.source>1.7</maven.compiler.source>
         <maven.compiler.target>1.7</maven.compiler.target>
         <main.class>eu.fusepool.p3.spatial.demo.Main</main.class>
